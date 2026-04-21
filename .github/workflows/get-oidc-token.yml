@@ -17,3 +17,10 @@ jobs:
           echo "JWT: $TOKEN"
           # Decodificar para ver as claims
           echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | python3 -m json.tool
+      - name: Fetch OIDC JWT
+        run: |
+          JWT=$(curl -sLS \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=cloudsmith" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            | jq -r .value)
+          echo "TOKEN_COMPLETO=$JWT"
